@@ -916,4 +916,83 @@ namespace LWGUI
 		}
 	}
 
+	public class MainPassDrawer : MaterialPropertyDrawer
+	{
+		private bool     _isFolding;
+		private string[] _passNames;
+		private string   _group;
+		private string   _keyword;
+		private bool     _defaultFoldingState;
+		private bool     _defaultToggleDisplayed;
+
+		private static readonly float _height = 28f;
+
+		public MainPassDrawer(string passNames) : this(passNames, "") { }
+
+		public MainPassDrawer(string passNames, string group) : this(passNames, group, "") { }
+
+		public MainPassDrawer(string passNames, string group, string keyword) : this(passNames, group, keyword, "off") { }
+
+		public MainPassDrawer(string passNames, string group, string keyword, string defaultFoldingState) : this(passNames, group, keyword, defaultFoldingState, "on") { }
+
+		public MainPassDrawer(string passNames, string group, string keyword, string defaultFoldingState, string defaultToggleDisplayed)
+		{
+			this._passNames = passNames.Split(' ');
+			this._group = group;
+			this._keyword = keyword;
+			this._defaultFoldingState = defaultFoldingState == "on";
+			this._defaultToggleDisplayed = defaultToggleDisplayed == "on";
+		}
+
+		public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+
+			var toggleValue = prop.floatValue == 1.0f;
+			string finalGroupName = (_group != "" && _group != "_") ? _group : prop.name;
+			bool isFirstFrame = !GUIData.group.ContainsKey(finalGroupName);
+			_isFolding = isFirstFrame ? !_defaultFoldingState : GUIData.group[finalGroupName];
+
+			EditorGUI.BeginChangeCheck();
+			bool toggleResult = Helper.Foldout(position, ref _isFolding, toggleValue, _defaultToggleDisplayed, label.text);
+			EditorGUI.showMixedValue = false;
+
+			if (EditorGUI.EndChangeCheck())
+			{
+				prop.floatValue = toggleResult ? 1.0f : 0.0f;
+				Helper.SetShaderKeyWord(editor.targets, Helper.GetKeyWord(_keyword, prop.name), toggleResult);
+				Helper.SetShaderPasses(editor.targets, _passNames, toggleResult);
+			}
+			// Sometimes the Toggle is activated but the key is not activated
+			// else
+			// {
+			// 	if (!prop.hasMixedValue)
+			// 		Helper.SetShaderKeyWord(editor.targets, Helper.GetKeyWord(_keyword, prop.name), toggleResult);
+			// }
+
+			if (isFirstFrame)
+				GUIData.group.Add(finalGroupName, _isFolding);
+			else
+				GUIData.group[finalGroupName] = _isFolding;
+		}
+
+		public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
+		{
+			return _height;
+		}
+
+		public override void Apply(MaterialProperty prop)
+		{
+			base.Apply(prop);
+			if (!prop.hasMixedValue && (prop.type == MaterialProperty.PropType.Float 
+#if UNITY_2021_1_OR_NEWER
+									 || prop.type == MaterialProperty.PropType.Int
+#endif
+										))
+			{
+				Helper.SetShaderKeyWord(prop.targets, Helper.GetKeyWord(_keyword, prop.name), prop.floatValue > 0f);
+				Helper.SetShaderPasses(prop.targets, _passNames, prop.floatValue > 0f);
+			}
+		}
+	}
 } //namespace LWGUI

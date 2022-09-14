@@ -371,6 +371,20 @@ namespace LWGUI
 			}
 		}
 
+		public static void SetShaderPasses(UnityEngine.Object[] materials, string[] passNames, bool isEnable)
+		{
+			foreach (Material m in materials)
+			{
+				foreach (var passName in passNames)
+				{
+					if (string.IsNullOrEmpty(passName))
+						continue;
+					
+					m.SetShaderPassEnabled(passName, isEnable);
+				}
+			}
+		}
+		
         public static void TurnColorDraw(Color useColor, UnityAction action)
         {
             var c = GUI.color;
