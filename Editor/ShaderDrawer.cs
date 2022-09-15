@@ -381,7 +381,6 @@ namespace LWGUI
 			base.Apply(prop);
 			if (!prop.hasMixedValue && IsMatchPropType(prop))
 				Helper.SetShaderKeyWord(prop.targets, GetKeywords(prop), (int)prop.floatValue);
-			Debug.Log(prop.floatValue);
 		}
 	}
 
@@ -993,6 +992,33 @@ namespace LWGUI
 				Helper.SetShaderKeyWord(prop.targets, Helper.GetKeyWord(_keyword, prop.name), prop.floatValue > 0f);
 				Helper.SetShaderPasses(prop.targets, _passNames, prop.floatValue > 0f);
 			}
+		}
+	}
+
+	public class TexSTDrawer : SubDrawer
+	{
+		private string _texPropName;
+		
+		private float _height = EditorGUIUtility.singleLineHeight * 2f + EditorGUIUtility.standardVerticalSpacing;
+
+		public TexSTDrawer(string group, string texPropName)
+		{
+			this.group = group;
+			this._texPropName = texPropName;
+		}
+		
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			var texST = LWGUI.FindProp(_texPropName, props, true);
+			position.x += 15f;
+			position.width -= 15f;
+
+			editor.TextureScaleOffsetProperty(position, texST);
+		}
+
+		public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
+		{
+			return IsVisible() ? _height : 0;
 		}
 	}
 } //namespace LWGUI
